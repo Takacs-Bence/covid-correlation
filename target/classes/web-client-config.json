@@ -1,0 +1,9 @@
+{
+  "clients":[
+    {
+      "name":"covidClient",
+      "basePath": "https://covid-api.mmediagroup.fr",
+      "version":1
+    }
+  ]
+}
