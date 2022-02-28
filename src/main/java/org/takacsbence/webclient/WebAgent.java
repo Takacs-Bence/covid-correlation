@@ -23,9 +23,10 @@ public class WebAgent {
 
         String version = "/v" + this.version;
 
+        HttpURLConnection conn = null;
         try {
             URL url = new URL(basePath + version + path);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod(httpMethod);
             conn.setRequestProperty("Accept", "application/json");
             if (conn.getResponseCode() != 200) {
@@ -43,7 +44,11 @@ public class WebAgent {
             return sb.toString();
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("fetching web api was unsuccessful", e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
