@@ -4,7 +4,9 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.takacsbence.model.Cases;
 import org.takacsbence.model.Vaccines;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -42,12 +44,8 @@ public class CorrelationEngine implements DataCleanser<Cases, Vaccines> {
     }
 
     private double[][] reduce() {
-
-        double[] xs = new double[this.cases.size()];
-        double[] ys = new double[this.vaccines.size()];
-        int j = 0;
-        int k = 0;
-
+        List<Double> reducedCase = new ArrayList<>();
+        List<Double> reducedVacc = new ArrayList<>();
         for (Map<String, Cases> next : cases.values()) {
             Collection<Cases> values = next.entrySet()
                     .stream()
@@ -55,13 +53,15 @@ public class CorrelationEngine implements DataCleanser<Cases, Vaccines> {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
                     .values();
 
-            for (Cases c : values) {
-                Long deaths = c.getDeaths();
-                double val = deaths.doubleValue();
-                xs[j] = val;
-                j++;
-            }
 
+            values.stream()
+                    .filter(c -> c.getPopulation() != null)
+                    .forEach(c -> {
+                        Long deaths = c.getDeaths();
+                        Long population = c.getPopulation();
+                        double val = deaths.doubleValue() / (population / 100000.00);
+                        reducedCase.add(val);
+                    });
         }
 
         for (Map<String, Vaccines> next : vaccines.values()) {
@@ -71,13 +71,18 @@ public class CorrelationEngine implements DataCleanser<Cases, Vaccines> {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
                     .values();
 
-            for (Vaccines v : values) {
-                Long vaccinated = v.getPeopleVaccinated();
-                double val = vaccinated.doubleValue();
-                ys[k] = val;
-                k++;
-            }
+            values.stream()
+                    .filter(v -> v.getPopulation() != null)
+                    .forEach(v -> {
+                        Long vaccinated = v.getPeopleVaccinated();
+                        Long population = v.getPopulation();
+                        double val = vaccinated.doubleValue() / (population / 100000.00);
+                        reducedVacc.add(val);
+                    });
         }
+
+        double[] xs = reducedCase.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] ys = reducedVacc.stream().mapToDouble(Double::doubleValue).toArray();
 
         return new double[][]{xs, ys};
     }
